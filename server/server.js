@@ -5,13 +5,13 @@ const port = process.env.PORT || 5000;
 const steamRouter = require('./routes/steam.router.js');
 const passport = require('passport')
 const SteamStrategy = require('passport-steam').Strategy;
-const session = require('express-session')
+const cookieSession = require('cookie-session');
 
 /** ---------- MIDDLEWARE ---------- **/
 app.use(bodyParser.json()); // needed for angular requests
 app.use(express.static('build'));
 
-app.use(session({
+app.use(cookieSession({
     secret: 'superSECRET',
     name: 'name of session id',
     resave: true,
@@ -22,9 +22,6 @@ app.use(session({
 // persistent login sessions (recommended).
 app.use(passport.initialize());
 app.use(passport.session());
-
-const router = require('./routes/steam.router');
-app.use('/auth/', router);
 
 /** ---------- STEAM ---------- **/
 
@@ -39,7 +36,7 @@ passport.deserializeUser(function (obj, done) {
 passport.use(new SteamStrategy({
     returnURL: 'http://localhost:5000/auth/steam/return',
     realm: 'http://localhost:5000/',
-    apiKey: '6063BABCF57998199D643BB845BDE325'
+    apiKey: '${process.env.STEAM_API_KEY}'
 },
     function (identifier, profile, done) {
         // asynchronous verification, for effect...
@@ -50,19 +47,21 @@ passport.use(new SteamStrategy({
             // to associate the Steam account with a user record in your database,
             // and return that user instead.
             profile.identifier = identifier;
-            console.log('profile:', profile);
-            session.user = profile
-            
             return done(null, profile);
         });
     }
 ));
 
-app.get('/', function (req, res) {
-    console.log('GET /');
-    console.log('user', req.session.user);
+app.get('/user', function (req, res) {
+    console.log('GET /user');
+    console.log('user', req.user);
     
-    res.send(req.session.user);
+    res.send(req.user);
+});
+
+app.get('/testing', function (req, res) {
+    console.log('GET /testing');
+    res.send('hello');
 });
 
 app.get('/account', ensureAuthenticated, function (req, res) {
@@ -71,7 +70,7 @@ app.get('/account', ensureAuthenticated, function (req, res) {
 
 app.get('/logout', function (req, res) {
     req.logout();
-    res.sendStatus(200);
+    res.redirect('http://localhost:3000/#/');
 });
 
 // Simple route middleware to ensure user is authenticated.
@@ -85,7 +84,7 @@ function ensureAuthenticated(req, res, next) {
 }
 
 /** ---------- ROUTES ---------- **/
-app.use('/steam', steamRouter)
+app.use('/auth/', steamRouter)
 
 /** ---------- START SERVER ---------- **/
 app.listen(port, function () {

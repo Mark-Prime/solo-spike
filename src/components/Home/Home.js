@@ -6,7 +6,7 @@ class Home extends Component {
     state = {}
 
     getInfo = () => {
-        axios.get(`/`)
+        axios.get(`/user`)
             .then((response) => {
                 console.log(response.data)
                 this.setState({
@@ -18,11 +18,21 @@ class Home extends Component {
             })
     }
 
+    componentDidMount() {
+        this.getInfo()
+    }
+
     render() { 
         return ( 
             <>
-                <button onClick={this.getInfo}>Get Info</button>
-                {this.state.data}
+                {this.state.data ?
+                    <div>
+                        {JSON.stringify(this.state.data)}
+                        <h2>{this.state.data._json.personaname}</h2> 
+                        <img src={this.state.data._json.avatarfull} alt='profile'></img>
+                        <a href="http://localhost:5000/logout">LOGOUT</a>
+                    </div> :
+                 <a href="/#/login">LOGIN</a>}
 
             </>
          );
