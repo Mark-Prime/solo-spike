@@ -11,6 +11,10 @@ const cookieSession = require('cookie-session');
 app.use(bodyParser.json()); // needed for angular requests
 app.use(express.static('build'));
 
+const dotenv = require('dotenv')
+dotenv.config()
+console.log('API KEY', process.env.STEAM_API_KEY)
+
 app.use(cookieSession({
     secret: 'superSECRET',
     name: 'name of session id',
@@ -36,7 +40,7 @@ passport.deserializeUser(function (obj, done) {
 passport.use(new SteamStrategy({
     returnURL: 'http://localhost:5000/auth/steam/return',
     realm: 'http://localhost:5000/',
-    apiKey: '${process.env.STEAM_API_KEY}'
+    apiKey: `${process.env.STEAM_API_KEY}`
 },
     function (identifier, profile, done) {
         // asynchronous verification, for effect...
@@ -56,7 +60,13 @@ app.get('/user', function (req, res) {
     console.log('GET /user');
     console.log('user', req.user);
     
-    res.send(req.user);
+    if (req.user === undefined) {
+        res.redirect('http://localhost:3000/#/login')
+    }
+    else{
+        res.send(req.user);
+    }
+
 });
 
 app.get('/testing', function (req, res) {
@@ -80,7 +90,7 @@ app.get('/logout', function (req, res) {
 //   login page.
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) { return next(); }
-    res.sendStatus(200);
+    res.redirect('/');
 }
 
 /** ---------- ROUTES ---------- **/
